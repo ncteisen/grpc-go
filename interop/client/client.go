@@ -196,6 +196,15 @@ func main() {
 	case "unimplemented_service":
 		interop.DoUnimplementedService(testpb.NewUnimplementedServiceClient(conn))
 		grpclog.Println("UnimplementedService done")
+	case "goaway":
+		interop.DoGoaway(tc)
+		grpclog.Println("Goaway done")
+	case "rst_after_header":
+		interop.ValidateSmallUnaryFails(tc)
+	case "rst_during_data":
+		interop.ValidateSmallUnaryFails(tc)
+	case "rst_after_data":
+		interop.ValidateSmallUnaryFails(tc)
 	default:
 		grpclog.Fatal("Unsupported test case: ", *testCase)
 	}

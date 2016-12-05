@@ -595,6 +595,55 @@ func DoUnimplementedMethod(cc *grpc.ClientConn) {
 	}
 }
 
+// DoGoaway sends a request to a server that will always send back a goaway
+func DoGoaway(tc testpb.TestServiceClient) {
+	size := 1024
+	pl := clientNewPayload(testpb.PayloadType_COMPRESSABLE, size)
+	req := &testpb.SimpleRequest{
+		ResponseType: testpb.PayloadType_COMPRESSABLE.Enum(),
+		ResponseSize: proto.Int32(int32(size)),
+		Payload:			pl,
+	}
+	// make and validate first request
+	{
+		reply, err := tc.UnaryCall(context.Background(), req)
+		if err != nil {
+			grpclog.Fatal("/TestService/UnaryCall RPC failed: ", err)
+		}
+		t := reply.GetPayload().GetType()
+		s := len(reply.GetPayload().GetBody())
+		if t != testpb.PayloadType_COMPRESSABLE || s != size {
+			grpclog.Fatalf("Got the reply with type %d len %d; want %d, %d", t, s, testpb.PayloadType_COMPRESSABLE, size)
+		}
+	}
+	// make and validate second request
+	{
+		reply, err := tc.UnaryCall(context.Background(), req)
+		if err != nil {
+			grpclog.Fatal("/TestService/UnaryCall RPC failed: ", err)
+		}
+		t := reply.GetPayload().GetType()
+		s := len(reply.GetPayload().GetBody())
+		if t != testpb.PayloadType_COMPRESSABLE || s != size {
+			grpclog.Fatalf("Got the reply with type %d len %d; want %d, %d", t, s, testpb.PayloadType_COMPRESSABLE, size)
+		}
+	}
+}
+
+func ValidateSmallUnaryFails(tc testpb.TestServiceClient) {
+	size := 1024
+	pl := clientNewPayload(testpb.PayloadType_COMPRESSABLE, size)
+	req := &testpb.SimpleRequest{
+		ResponseType: testpb.PayloadType_COMPRESSABLE.Enum(),
+		ResponseSize: proto.Int32(int32(size)),
+		Payload:			pl,
+	}
+	_, err := tc.UnaryCall(context.Background(), req)
+	if grpc.Code(err) != codes.Internal {
+		grpclog.Fatalf("%v.UnaryCall() = _, %v, want _, %v", tc, grpc.Code(err), codes.Internal)
+	}
+}
+
 type testServer struct {
 }
 
